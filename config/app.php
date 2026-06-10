@@ -8,7 +8,7 @@ return [
     'timezone'=> 'UTC',
     'session' => [
         'lifetime' => 1800,
-        'secure'   => false,
+        'secure'   => getenv('APP_ENV') === 'production',
         'httponly' => true,
         'samesite' => 'Strict',
     ],
