@@ -9,9 +9,21 @@ session(); // Initialize session
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// Remove base path (supports both subdirectory and root domain)
-$basePath = getenv('APP_BASE_PATH') ?: '';
-$uri = $basePath ? str_replace($basePath, '', $uri) : $uri;
+// Detect base path by comparing document root to the application path
+$docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '');
+$appPath = str_replace('\\', '/', dirname(__DIR__));
+$basePath = '';
+if (strpos($appPath, $docRoot) === 0) {
+    $basePath = substr($appPath, strlen($docRoot));
+}
+// Fallback to env var if set
+$basePath = getenv('APP_BASE_PATH') ?: $basePath;
+// Strip trailing slash
+$basePath = rtrim($basePath, '/');
+
+if ($basePath && strpos($uri, $basePath) === 0) {
+    $uri = substr($uri, strlen($basePath));
+}
 $uri = '/' . trim($uri, '/');
 
 $method = $_SERVER['REQUEST_METHOD'];
