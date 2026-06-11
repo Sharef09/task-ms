@@ -7,7 +7,7 @@ use App\Helpers\Database;
 
 session(); // Initialize session
 
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$uri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '/';
 
 // Detect base path by comparing document root to the application path
 $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '');

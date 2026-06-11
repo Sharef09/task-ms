@@ -1,6 +1,6 @@
 <?php
 $app = require dirname(__DIR__, 3) . '/config/app.php';
-$currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '/';
 $baseUrl = rtrim($app['url'], '/');
 
 $links = [
