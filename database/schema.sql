@@ -574,6 +574,19 @@ INSERT INTO `system_settings` (`setting_key`, `setting_value`) VALUES
 -- 7. Default Email Templates
 -- ----------------------------------------------------------------
 -- ====================================================================
+-- 22b. USER PREFERENCES
+-- ====================================================================
+CREATE TABLE IF NOT EXISTS `user_preferences` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT UNSIGNED NOT NULL,
+    `preferences` JSON NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `uk_user_preferences_user_id` (`user_id`),
+    CONSTRAINT `fk_user_preferences_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ====================================================================
 -- 23. MEETINGS
 -- ====================================================================
 CREATE TABLE IF NOT EXISTS `meetings` (
