@@ -46,18 +46,36 @@ foreach ($sqlFiles as $file) {
     $sql = preg_replace('/^USE\s+`?[^;]+`?;/ims', '', $sql);
     $sql = trim($sql);
 
-    if ($mysqli->multi_query($sql)) {
-        $count = 0;
-        do {
+    try {
+        $mysqli->multi_query($sql);
+    } catch (\Throwable $e) {
+        echo "  Error: " . $e->getMessage() . "\n";
+        // Still need to consume results
+    }
+    $count = 0;
+    do {
+        try {
             if ($result = $mysqli->store_result()) {
                 $result->free();
             }
             $count++;
-        } while ($mysqli->next_result());
-        echo "Executed SQL from " . basename($file) . "\n";
-    } else {
-        echo "Error in " . basename($file) . ": " . $mysqli->error . "\n";
-    }
+        } catch (\Throwable $e) {
+            echo "  Skipped: " . $e->getMessage() . "\n";
+        }
+        try {
+            $hasMore = $mysqli->more_results();
+        } catch (\Throwable $e) {
+            $hasMore = false;
+        }
+        if ($hasMore) {
+            try {
+                $mysqli->next_result();
+            } catch (\Throwable $e) {
+                echo "  Next result: " . $e->getMessage() . "\n";
+            }
+        }
+    } while ($hasMore);
+    echo "Processed SQL from " . basename($file) . " ($count segments)\n";
 }
 
 $mysqli->close();
