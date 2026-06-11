@@ -4,12 +4,12 @@
  * Navigation modules conditionally shown based on isAdmin() / hasPermission().
  * Active state based on current URI.
  */
-$currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
 $appUrl     = rtrim((require dirname(__DIR__) . '/config/app.php')['url'], '/');
 
 function isActive(string $segment): string {
     global $currentUri, $appUrl;
-    $path = parse_url($currentUri, PHP_URL_PATH);
+    $path = parse_url($currentUri ?: '', PHP_URL_PATH) ?? '';
     return str_starts_with($path, $appUrl . '/' . $segment) ? 'active' : '';
 }
 
