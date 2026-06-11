@@ -7,10 +7,9 @@
 $currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '/';
 $appUrl     = rtrim((require dirname(__DIR__) . '/config/app.php')['url'], '/');
 
-function isActive(string $segment): string {
-    global $currentUri;
+$isActive = function(string $segment) use ($currentUri): string {
     return $currentUri === '/' . $segment || str_starts_with($currentUri, '/' . $segment . '/') ? 'active' : '';
-}
+};
 
 $modules = [
     ['label' => 'DASHBOARD', 'items' => [
@@ -66,7 +65,7 @@ $modules = [
                         $allowed = hasPermission($item['guard']);
                     }
                     if (!$allowed) continue;
-                    $active = isActive(ltrim($item['url'], '/'));
+                    $active = $isActive(ltrim($item['url'], '/'));
                 ?>
                     <li class="nav-item">
                         <a class="nav-link <?= $active ?>" href="<?= $appUrl . $item['url'] ?>"<?= $item['url'] === '/logout' ? ' data-confirm="Are you sure you want to logout?"' : '' ?>>
