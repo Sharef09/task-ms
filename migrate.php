@@ -4,43 +4,61 @@
  * Usage: php migrate.php
  */
 
-require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/app/helpers/Database.php';
 require_once __DIR__ . '/app/helpers/functions.php';
 
-use App\Helpers\Database;
+// Connect using MYSQL_URL
+$dbUrl = getenv('MYSQL_URL') ?: getenv('DATABASE_URL') ?: '';
+if (!$dbUrl) {
+    echo "No MYSQL_URL or DATABASE_URL environment variable found.\n";
+    exit(1);
+}
+
+$parsed = parse_url($dbUrl);
+$host = $parsed['host'] ?? 'localhost';
+$port = $parsed['port'] ?? '3306';
+$dbname = ltrim($parsed['path'] ?? 'task_management', '/');
+$username = $parsed['user'] ?? 'root';
+$password = $parsed['pass'] ?? '';
+
+$mysqli = new mysqli($host, $username, $password, $dbname, (int)$port);
+if ($mysqli->connect_error) {
+    echo "Connection failed: " . $mysqli->connect_error . "\n";
+    exit(1);
+}
+echo "Connected to MySQL ($host:$port/$dbname)\n";
 
 $sqlFiles = [
     __DIR__ . '/database/schema.sql',
     __DIR__ . '/database/migration_task_upgrade.sql',
 ];
 
-$db = Database::getInstance()->getConnection();
-
 foreach ($sqlFiles as $file) {
     if (!file_exists($file)) {
         echo "Skip (not found): $file\n";
         continue;
     }
+
     $sql = file_get_contents($file);
     if (empty(trim($sql))) continue;
 
-    // Split by semicolons for individual execution
-    $statements = array_filter(
-        array_map('trim', explode(';', $sql)),
-        fn($s) => !empty($s) && !str_starts_with($s, '--')
-    );
+    // Remove CREATE DATABASE and USE statements (Railway provides the DB)
+    $sql = preg_replace('/^CREATE\s+DATABASE.*?;/ims', '', $sql);
+    $sql = preg_replace('/^USE\s+`?[^;]+`?;/ims', '', $sql);
+    $sql = trim($sql);
 
-    $count = 0;
-    foreach ($statements as $stmt) {
-        try {
-            $db->exec($stmt);
+    if ($mysqli->multi_query($sql)) {
+        $count = 0;
+        do {
+            if ($result = $mysqli->store_result()) {
+                $result->free();
+            }
             $count++;
-        } catch (\Throwable $e) {
-            echo "Error in $file: " . $e->getMessage() . "\n";
-        }
+        } while ($mysqli->next_result());
+        echo "Executed SQL from " . basename($file) . "\n";
+    } else {
+        echo "Error in " . basename($file) . ": " . $mysqli->error . "\n";
     }
-    echo "Executed $count statements from $file\n";
 }
 
+$mysqli->close();
 echo "Migration complete.\n";
